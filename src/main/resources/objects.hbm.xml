@@ -10,10 +10,10 @@
             <property name="username" type="string" column="username"/>
             <property name="email" type="string" column="email"/>
             <property name="password" type="string" column="password"/>
+            <property name="secret" type="string" column="secret"/>
         </class>
 
-
-<!--    <class name="com.ashcollege.entities.Student" table="students" lazy="false">-->
+    <!--    <class name="com.ashcollege.entities.Student" table="students" lazy="false">-->
 <!--        <id name="id" type="int" column="id">-->
 <!--            <generator class="native"/>-->
 <!--        </id>-->

@@ -1,10 +1,10 @@
 package com.ashcollege.responses;
 
-public class signUpResponse extends BasicResponse {
+public class SignUpResponse extends BasicResponse {
     private int id;
     private String secret;
 
-    public signUpResponse(boolean success, Integer errorCode, int id, String secret) {
+    public SignUpResponse(boolean success, Integer errorCode, int id, String secret) {
         super(success, errorCode);
         this.id = id;
         this.secret = secret;

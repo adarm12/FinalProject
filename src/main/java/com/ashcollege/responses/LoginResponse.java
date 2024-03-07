@@ -4,7 +4,7 @@ public class LoginResponse extends BasicResponse {
     private int id;
     private String secret;
 
-    public LoginResponse(boolean success, Integer errorCode, int id, String secret) {
+    public LoginResponse(boolean success, Integer errorCode, Integer id, String secret) {
         super(success, errorCode);
         this.id = id;
         this.secret = secret;
