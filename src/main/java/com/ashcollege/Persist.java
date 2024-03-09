@@ -57,7 +57,7 @@ public class Persist {
                         if (!password.isEmpty()) {
                             if (password.equals(repeatPassword)) {
                                 User user = new User(username, email, password);
-                                Facker faker = new Faker();
+                                Faker faker = new Faker();
                                 user.setSecret(faker.random().hex(5));
                                 save(user);
                                 basicResponse.setSuccess(true);
