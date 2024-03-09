@@ -24,9 +24,9 @@ public class GeneralController {
         return "Hello From Server";
     }
 
-    @RequestMapping (value = "add-user", method = {RequestMethod.GET, RequestMethod.POST})
-    public BasicResponse addUser (String username, String email, String password) {
-        return persist.insertUser(username, email, password);
+    @RequestMapping (value = "sign-up", method = {RequestMethod.GET, RequestMethod.POST})
+    public BasicResponse signUp(String username, String email, String password, String repeatPassword) {
+        return persist.signUp(username, email, password, repeatPassword);
     }
     @RequestMapping (value = "login", method = {RequestMethod.GET, RequestMethod.POST})
     public LoginResponse login(String username, String email, String password) {
