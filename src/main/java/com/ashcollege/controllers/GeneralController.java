@@ -29,7 +29,7 @@ public class GeneralController {
 
     @RequestMapping (value = "sign-up", method = {RequestMethod.GET, RequestMethod.POST})
     public BasicResponse signUp(String username, String email, String password, String repeatPassword) {
-        return persist.signUp(username, email, password, repeatPassword);
+        return persist.signup(username, email, password, repeatPassword);
     }
     @RequestMapping (value = "login", method = {RequestMethod.GET, RequestMethod.POST})
     public LoginResponse login(String username, String email, String password) {
