@@ -3,7 +3,9 @@
         "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
 <hibernate-mapping>
 
-        <class name="com.ashcollege.entities.User" table="users" lazy="false">
+
+
+    <class name="com.ashcollege.entities.User" table="users" lazy="false">
             <id name="id" type="int" column="id">
                 <generator class="native"/>
             </id>

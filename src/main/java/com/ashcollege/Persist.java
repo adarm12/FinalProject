@@ -1,7 +1,9 @@
 package com.ashcollege;
+
 import com.ashcollege.entities.User;
 import com.ashcollege.responses.BasicResponse;
 import com.ashcollege.responses.LoginResponse;
+import com.github.javafaker.Faker;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +12,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Array;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -24,16 +29,20 @@ public class Persist {
     private static final Logger LOGGER = LoggerFactory.getLogger(Persist.class);
 
     private final SessionFactory sessionFactory;
+
     @Autowired
     public Persist(SessionFactory sf) {
         this.sessionFactory = sf;
     }
+
     public Session getQuerySession() {
         return sessionFactory.getCurrentSession();
     }
+
     public void save(Object object) {
         this.sessionFactory.getCurrentSession().saveOrUpdate(object);
     }
+
     public <T> T loadObject(Class<T> clazz, int oid) {
         return this.getQuerySession().get(clazz, oid);
     }
@@ -48,6 +57,8 @@ public class Persist {
                         if (!password.isEmpty()) {
                             if (password.equals(repeatPassword)) {
                                 User user = new User(username, email, password);
+                                Faker faker = new Faker();
+                                user.setSecret(faker.random().hex(5));
                                 save(user);
                                 basicResponse.setSuccess(true);
                                 basicResponse.setErrorCode(NO_ERRORS);
@@ -60,6 +71,16 @@ public class Persist {
         return basicResponse;
     }
 
+    public List<User> loadUsers() {
+        List<User> allUsers = new ArrayList<>();
+        User userToAdd;
+        userToAdd = (User) this.sessionFactory.getCurrentSession().createQuery(
+                        "From User WHERE secret IS NULL")
+                .setMaxResults(1)
+                .uniqueResult();
+        allUsers.add(userToAdd);
+        return allUsers;
+    }
 
     private boolean usernameAvailable(String username) {
         User user;
@@ -157,7 +178,7 @@ public class Persist {
 
     public LoginResponse login(String username, String email, String password) {
         LoginResponse loginResponse = new LoginResponse(false, null);
-        if (usernameExists(username) && username != null)  {
+        if (usernameExists(username) && username != null) {
             if (username != null && username.length() > 0) {
                 if (email != null && password.length() > 0) {
                     if (emailExists(email)) {

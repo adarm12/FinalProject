@@ -1,6 +1,7 @@
 package com.ashcollege.controllers;
 
 import com.ashcollege.Persist;
+import com.ashcollege.entities.User;
 import com.ashcollege.responses.BasicResponse;
 import com.ashcollege.responses.LoginResponse;
 import com.ashcollege.utils.DbUtils;
@@ -8,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 public class GeneralController {
@@ -37,6 +40,11 @@ public class GeneralController {
     public BasicResponse editUser(String email, String newUsername, String password, String newPassword) {
         return persist.editUser(email,newUsername, password, newPassword);
     }
+
+//    @RequestMapping (value = "load-users", method = {RequestMethod.GET, RequestMethod.POST})
+//    public List<User> users() {
+//        return persist.loadUsers();
+//    }
 
 
 }
