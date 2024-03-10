@@ -11,16 +11,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.sql.Array;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import static com.ashcollege.utils.Errors.*;
 import static com.ashcollege.utils.Errors.ERROR_PASSWORD_NOT_MATCH;
-
 @Transactional
 @Component
 @SuppressWarnings("unchecked")
@@ -47,7 +43,6 @@ public class Persist {
         return this.getQuerySession().get(clazz, oid);
     }
 
-
     public BasicResponse signup(String username, String email, String password, String repeatPassword) {
         BasicResponse basicResponse = new BasicResponse(false, ERROR_MISSING_FIELDS);
         if (!username.isEmpty()) {
@@ -68,6 +63,46 @@ public class Persist {
                 } else basicResponse.setErrorCode(ERROR_NO_EMAIL);
             } else basicResponse.setErrorCode(ERROR_USERNAME_TAKEN);
         } else basicResponse.setErrorCode(ERROR_NO_USERNAME);
+        return basicResponse;
+    }
+
+    public LoginResponse login(String username, String email, String password) {
+        LoginResponse loginResponse = new LoginResponse(false, ERROR_MISSING_FIELDS);
+        if (!username.isEmpty()) {
+            if (usernameExists(username)) {
+                if (!email.isEmpty()) {
+                    if (emailExists(email)) {
+                        if (!password.isEmpty()) {
+                            if (userExists(email, password) != null) {
+                                User user = userExists(email, password);
+                                loginResponse.setSuccess(true);
+                                loginResponse.setErrorCode(NO_ERRORS);
+                                loginResponse.setId(user.getId());
+                                loginResponse.setSecret(user.getSecret());
+                                loginResponse.setUser(user);
+                            } else loginResponse.setErrorCode(ERROR_INCORRECT_PASSWORD);
+                        } else loginResponse.setErrorCode(ERROR_NO_PASSWORD);
+                    } else loginResponse.setErrorCode(ERROR_NO_SUCH_EMAIL);
+                } else loginResponse.setErrorCode(ERROR_NO_EMAIL);
+            } else loginResponse.setErrorCode(ERROR_NO_SUCH_USERNAME);
+        } else loginResponse.setErrorCode(ERROR_NO_USERNAME);
+        return loginResponse;
+    }
+
+    public BasicResponse editUser(String email, String newUsername, String password, String newPassword) {
+        BasicResponse basicResponse = new BasicResponse(false, ERROR_MISSING_FIELDS);
+        if (!usernameExists(newUsername)) {
+            if (!newUsername.isEmpty()) {
+                if (!newPassword.isEmpty()) {
+                    User user = getClientByInfo(email, password);
+                    user.setUsername(newUsername);
+                    user.setPassword(newPassword);
+                    save(user);
+                    basicResponse.setSuccess(true);
+                    basicResponse.setErrorCode(NO_ERRORS);
+                } else basicResponse.setErrorCode(ERROR_NO_PASSWORD);
+            } else basicResponse.setErrorCode(ERROR_NO_USERNAME);
+        } else basicResponse.setErrorCode(ERROR_USERNAME_TAKEN);
         return basicResponse;
     }
 
@@ -92,33 +127,22 @@ public class Persist {
         return (user == null);
     }
 
+    private User userBySecretAndId(String id, String secret) {
+        User user;
+        user = (User) this.sessionFactory.getCurrentSession().createQuery(
+                        "From User WHERE id = :id AND secret =:secret")
+                .setParameter("id", id)
+                .setParameter("secret", secret)
+                .setMaxResults(1)
+                .uniqueResult();
+        return user;
+    }
+
     private boolean emailIsValid(String email) { // האם המייל תקין
         String emailRegex = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$";
         Pattern pattern = Pattern.compile(emailRegex);
         Matcher matcher = pattern.matcher(email);
         return matcher.matches();
-    }
-
-    public LoginResponse login(String username, String email, String password) {
-        LoginResponse loginResponse = new LoginResponse(false, ERROR_MISSING_FIELDS);
-        if (!username.isEmpty()) {
-            if (usernameExists(username)) {
-                if (!email.isEmpty()) {
-                    if (emailExists(email)) {
-                        if (!password.isEmpty()) {
-                            if (userExists(email, password) != null) {
-                                User user = userExists(email, password);
-                                loginResponse.setSuccess(true);
-                                loginResponse.setErrorCode(NO_ERRORS);
-                                loginResponse.setId(user.getId());
-                                loginResponse.setSecret(user.getSecret());
-                            } else loginResponse.setErrorCode(ERROR_INCORRECT_PASSWORD);
-                        } else loginResponse.setErrorCode(ERROR_NO_PASSWORD);
-                    } else loginResponse.setErrorCode(ERROR_NO_SUCH_EMAIL);
-                } else loginResponse.setErrorCode(ERROR_NO_EMAIL);
-            } else loginResponse.setErrorCode(ERROR_NO_SUCH_USERNAME);
-        } else loginResponse.setErrorCode(ERROR_NO_USERNAME);
-        return loginResponse;
     }
 
     private boolean usernameExists(String username) {
@@ -160,7 +184,7 @@ public class Persist {
         return user;
     }
 
-    private User getClientByCreds(String email, String password) {
+    private User getClientByInfo(String email, String password) {
         User user;
         user = (User) this.sessionFactory.getCurrentSession().createQuery(
                         "From User WHERE email = :email AND password = :password")
@@ -171,22 +195,7 @@ public class Persist {
         return user;
     }
 
-    public BasicResponse editUser(String email, String newUsername, String password, String newPassword) {
-        BasicResponse basicResponse = new BasicResponse(false, ERROR_MISSING_FIELDS);
-        if (!usernameExists(newUsername)) {
-            if (!newUsername.isEmpty()) {
-                if (!newPassword.isEmpty()) {
-                    User user = getClientByCreds(email, password);
-                    user.setUsername(newUsername);
-                    user.setPassword(newPassword);
-                    save(user);
-                    basicResponse.setSuccess(true);
-                    basicResponse.setErrorCode(NO_ERRORS);
-                } else basicResponse.setErrorCode(ERROR_NO_PASSWORD);
-            } else basicResponse.setErrorCode(ERROR_NO_USERNAME);
-        } else basicResponse.setErrorCode(ERROR_USERNAME_TAKEN);
-        return basicResponse;
-    }
+
 //
 //   public BasicResponse innerUser (String username, String email, String password) {
 //        BasicResponse basicResponse = new BasicResponse(false, ERROR_USERNAME_TAKEN);
