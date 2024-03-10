@@ -15,6 +15,21 @@
             <property name="secret" type="string" column="secret"/>
         </class>
 
+
+    <class name="com.ashcollege.entities.Team" table="teams" lazy="false">
+        <id name="id" type="int" column="id">
+            <generator class="native"/>
+        </id>
+        <property name="teamName" type="string" column="name"/>
+        <property name="points" type="int" column="points"/>
+        <property name="goalsDifference" type="int" column="difference"/>
+        <property name="offensiveRating" type="int" column="offensive_rating"/>
+        <property name="defensiveRating" type="int" column="defensive_rating"/>
+        <property name="playerInjuries" type="int" column="injuries"/>
+
+
+    </class>
+
     <!--    <class name="com.ashcollege.entities.Student" table="students" lazy="false">-->
 <!--        <id name="id" type="int" column="id">-->
 <!--            <generator class="native"/>-->

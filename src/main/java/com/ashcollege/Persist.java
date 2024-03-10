@@ -1,5 +1,6 @@
 package com.ashcollege;
 
+import com.ashcollege.entities.Team;
 import com.ashcollege.entities.User;
 import com.ashcollege.responses.BasicResponse;
 import com.ashcollege.responses.LoginResponse;
@@ -15,6 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static com.ashcollege.utils.Constants.*;
 import static com.ashcollege.utils.Errors.*;
 import static com.ashcollege.utils.Errors.ERROR_PASSWORD_NOT_MATCH;
 @Transactional
@@ -193,6 +196,24 @@ public class Persist {
                 .setMaxResults(1)
                 .uniqueResult();
         return user;
+    }
+
+
+
+    public void insertTeamsToTable() {
+
+        List<String> teamsNames = List.of(new String[]{"maccabi tel aviv", "hapoel tel aviv", "hapoel holon", "maccabi haifa",
+                "hapoel eilat", "galil elyon", "maccabi ramat gan", "hapoel beersheva"});
+
+        for (String name: teamsNames) {
+            int offensiveRating = (int) (Math.random() * (MAXIMUM_OFFENSIVE_RATING-MINIMUM_OFFENSIVE_RATING+1)) + MINIMUM_OFFENSIVE_RATING;
+            int defensiveRating = (int) (Math.random() * (MAXIMUM_DEFENSIVE_RATING-MINIMUM_DEFENSIVE_RATING+1)) + MINIMUM_DEFENSIVE_RATING;
+
+            Team team = new Team(name,0,0,offensiveRating,defensiveRating,0);
+            save(team);
+
+        }
+
     }
 
 

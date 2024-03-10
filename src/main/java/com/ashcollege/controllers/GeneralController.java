@@ -39,6 +39,14 @@ public class GeneralController {
         return persist.editUser(email,newUsername, password, newPassword);
     }
 
+
+
+//    run only one time to initiate the league
+//    @RequestMapping(value = "insert-teams", method = {RequestMethod.GET,RequestMethod.POST})
+//    public void insertTeams() {
+//        persist.insertTeamsToTable();
+//    }
+
 //    @RequestMapping (value = "load-users", method = {RequestMethod.GET, RequestMethod.POST})
 //    public List<User> users() {
 //        return persist.loadUsers();
