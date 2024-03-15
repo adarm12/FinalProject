@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -20,6 +21,7 @@ import java.util.regex.Pattern;
 import static com.ashcollege.utils.Constants.*;
 import static com.ashcollege.utils.Errors.*;
 import static com.ashcollege.utils.Errors.ERROR_PASSWORD_NOT_MATCH;
+
 @Transactional
 @Component
 @SuppressWarnings("unchecked")
@@ -54,12 +56,14 @@ public class Persist {
                     if (emailIsValid(email)) {
                         if (!password.isEmpty()) {
                             if (password.equals(repeatPassword)) {
-                                User user = new User(username, email, password);
-                                Faker faker = new Faker();
-                                user.setSecret(faker.random().hex(5));
-                                save(user);
-                                basicResponse.setSuccess(true);
-                                basicResponse.setErrorCode(NO_ERRORS);
+                                if (validPassword(password).isSuccess()) {
+                                    User user = new User(username, email, password);
+                                    Faker faker = new Faker();
+                                    user.setSecret(faker.random().hex(5));
+                                    save(user);
+                                    basicResponse.setSuccess(true);
+                                    basicResponse.setErrorCode(NO_ERRORS);
+                                } else basicResponse = validPassword(password);
                             } else basicResponse.setErrorCode(ERROR_PASSWORD_NOT_MATCH);
                         } else basicResponse.setErrorCode(ERROR_NO_PASSWORD);
                     } else basicResponse.setErrorCode(ERROR_EMAIL_IS_NOT_VALID);
@@ -69,26 +73,22 @@ public class Persist {
         return basicResponse;
     }
 
-    public LoginResponse login(String username, String email, String password) {
+    public LoginResponse login(String email, String password) {
         LoginResponse loginResponse = new LoginResponse(false, ERROR_MISSING_FIELDS);
-        if (!username.isEmpty()) {
-            if (usernameExists(username)) {
-                if (!email.isEmpty()) {
-                    if (emailExists(email)) {
-                        if (!password.isEmpty()) {
-                            if (userExists(email, password) != null) {
-                                User user = userExists(email, password);
-                                loginResponse.setSuccess(true);
-                                loginResponse.setErrorCode(NO_ERRORS);
-                                loginResponse.setId(user.getId());
-                                loginResponse.setSecret(user.getSecret());
-                                loginResponse.setUser(user);
-                            } else loginResponse.setErrorCode(ERROR_INCORRECT_PASSWORD);
-                        } else loginResponse.setErrorCode(ERROR_NO_PASSWORD);
-                    } else loginResponse.setErrorCode(ERROR_NO_SUCH_EMAIL);
-                } else loginResponse.setErrorCode(ERROR_NO_EMAIL);
-            } else loginResponse.setErrorCode(ERROR_NO_SUCH_USERNAME);
-        } else loginResponse.setErrorCode(ERROR_NO_USERNAME);
+        if (!email.isEmpty()) {
+            if (emailExists(email)) {
+                if (!password.isEmpty()) {
+                    if (userExists(email, password) != null) {
+                        User user = userExists(email, password);
+                        loginResponse.setSuccess(true);
+                        loginResponse.setErrorCode(NO_ERRORS);
+                        loginResponse.setId(user.getId());
+                        loginResponse.setSecret(user.getSecret());
+                        loginResponse.setUser(user);
+                    } else loginResponse.setErrorCode(ERROR_INCORRECT_PASSWORD);
+                } else loginResponse.setErrorCode(ERROR_NO_PASSWORD);
+            } else loginResponse.setErrorCode(ERROR_NO_SUCH_EMAIL);
+        } else loginResponse.setErrorCode(ERROR_NO_EMAIL);
         return loginResponse;
     }
 
@@ -97,7 +97,7 @@ public class Persist {
         if (!usernameExists(newUsername)) {
             if (!newUsername.isEmpty()) {
                 if (!newPassword.isEmpty()) {
-                    User user = getClientByInfo(email, password);
+                    User user = getUserByInfo(email, password);
                     user.setUsername(newUsername);
                     user.setPassword(newPassword);
                     save(user);
@@ -106,6 +106,17 @@ public class Persist {
                 } else basicResponse.setErrorCode(ERROR_NO_PASSWORD);
             } else basicResponse.setErrorCode(ERROR_NO_USERNAME);
         } else basicResponse.setErrorCode(ERROR_USERNAME_TAKEN);
+        return basicResponse;
+    }
+
+    public BasicResponse validPassword(String password) {
+        BasicResponse basicResponse = new BasicResponse(false, null);
+        if (password.length() >= 8) {
+            if (password.contains("@") || password.contains("!")) {
+                basicResponse.setSuccess(true);
+            } else basicResponse.setErrorCode(ERROR_PASSWORD_DOES_NOT_CONTAIN_SYMBOLS);
+        } else basicResponse.setErrorCode(ERROR_SHORT_PASSWORD);
+
         return basicResponse;
     }
 
@@ -187,7 +198,7 @@ public class Persist {
         return user;
     }
 
-    private User getClientByInfo(String email, String password) {
+    private User getUserByInfo(String email, String password) {
         User user;
         user = (User) this.sessionFactory.getCurrentSession().createQuery(
                         "From User WHERE email = :email AND password = :password")
@@ -199,17 +210,16 @@ public class Persist {
     }
 
 
-
     public void insertTeamsToTable() {
 
         List<String> teamsNames = List.of(new String[]{"maccabi tel aviv", "hapoel tel aviv", "hapoel holon", "maccabi haifa",
                 "hapoel eilat", "galil elyon", "maccabi ramat gan", "hapoel beersheva"});
 
-        for (String name: teamsNames) {
-            int offensiveRating = (int) (Math.random() * (MAXIMUM_OFFENSIVE_RATING-MINIMUM_OFFENSIVE_RATING+1)) + MINIMUM_OFFENSIVE_RATING;
-            int defensiveRating = (int) (Math.random() * (MAXIMUM_DEFENSIVE_RATING-MINIMUM_DEFENSIVE_RATING+1)) + MINIMUM_DEFENSIVE_RATING;
+        for (String name : teamsNames) {
+            int offensiveRating = (int) (Math.random() * (MAXIMUM_OFFENSIVE_RATING - MINIMUM_OFFENSIVE_RATING + 1)) + MINIMUM_OFFENSIVE_RATING;
+            int defensiveRating = (int) (Math.random() * (MAXIMUM_DEFENSIVE_RATING - MINIMUM_DEFENSIVE_RATING + 1)) + MINIMUM_DEFENSIVE_RATING;
 
-            Team team = new Team(name,0,0,offensiveRating,defensiveRating,0);
+            Team team = new Team(name, 0, 0, offensiveRating, defensiveRating, 0);
             save(team);
 
         }

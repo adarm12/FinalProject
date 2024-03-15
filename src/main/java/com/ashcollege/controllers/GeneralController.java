@@ -30,8 +30,8 @@ public class GeneralController {
         return persist.signup(username, email, password, repeatPassword);
     }
     @RequestMapping (value = "login", method = {RequestMethod.GET, RequestMethod.POST})
-    public LoginResponse login(String username, String email, String password) {
-        return persist.login(username, email, password);
+    public LoginResponse login(String email, String password) {
+        return persist.login(email, password);
     }
     
     @RequestMapping (value = "edit-user", method = {RequestMethod.GET, RequestMethod.POST})
