@@ -93,17 +93,21 @@ public class Persist {
         return loginResponse;
     }
 
-    public BasicResponse editUser(String email, String newUsername, String password, String newPassword) {
+    public BasicResponse editUser(String email, String newUsername, String password, String newPassword, String repeatNewPassword) {
         BasicResponse basicResponse = new BasicResponse(false, ERROR_MISSING_FIELDS);
         if (!usernameExists(newUsername)) {
             if (!newUsername.isEmpty()) {
                 if (!newPassword.isEmpty()) {
-                    User user = getUserByInfo(email, password);
-                    user.setUsername(newUsername);
-                    user.setPassword(newPassword);
-                    save(user);
-                    basicResponse.setSuccess(true);
-                    basicResponse.setErrorCode(NO_ERRORS);
+                    if (newPassword.equals(repeatNewPassword)) {
+                        if (validPassword(newPassword).isSuccess()) {
+                            User user = getUserByInfo(email, password);
+                            user.setUsername(newUsername);
+                            user.setPassword(newPassword);
+                            save(user);
+                            basicResponse.setSuccess(true);
+                            basicResponse.setErrorCode(NO_ERRORS);
+                        } else basicResponse = validPassword(newPassword);
+                    } else basicResponse.setErrorCode(ERROR_PASSWORD_NOT_MATCH);
                 } else basicResponse.setErrorCode(ERROR_NO_PASSWORD);
             } else basicResponse.setErrorCode(ERROR_NO_USERNAME);
         } else basicResponse.setErrorCode(ERROR_USERNAME_TAKEN);
@@ -222,9 +226,7 @@ public class Persist {
 
             Team team = new Team(name, 0, 0, offensiveRating, defensiveRating, 0);
             save(team);
-
         }
-
     }
 
     private List<Team> getTeams() {
@@ -254,7 +256,7 @@ public class Persist {
                 Team team2 = teams.get(team2Index);
 
                 System.out.println(team1.getTeamName() + " vs " + team2.getTeamName());
-                Matchup matchup = new Matchup(round,team1,team2);
+                Matchup matchup = new Matchup(round, team1, team2);
                 roundMatchups.add(matchup);
             }
 
@@ -267,19 +269,19 @@ public class Persist {
     }
 
     public void startRound(List<Matchup> games) {
-        for (Matchup game:games) {
+        for (Matchup game : games) {
 
             new Thread(() -> {
                 int team1Chances = game.calculateTeam1Odds();
-                for (int i=0;i<GAME_LENGTH/TRY_GOAL;i++) {
+                for (int i = 0; i < GAME_LENGTH / TRY_GOAL; i++) {
                     try {
                         Thread.sleep(TRY_GOAL);
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
-                    int goalHappens = (int)(Math.random()*100+1);
+                    int goalHappens = (int) (Math.random() * 100 + 1);
                     int goal = (int) (Math.random() * 100) + 1;
-                    if (goalHappens>=50) {
+                    if (goalHappens >= 50) {
                         if (goal <= team1Chances) {
                             game.addGoalTeam1();
                         } else {
@@ -296,7 +298,6 @@ public class Persist {
         Team lastTeam = teams.remove(teams.size() - 1);
         teams.add(1, lastTeam);
     }
-
 
 
 //
