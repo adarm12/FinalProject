@@ -9,4 +9,8 @@ public class Constants {
     public static final int MINIMUM_OFFENSIVE_RATING = 70;
     public static final int MAXIMUM_OFFENSIVE_RATING = 90;
 
+    public static final int GAME_LENGTH = 30000;
+    public static final int TRY_GOAL = 5000;
+
+
 }

@@ -39,6 +39,13 @@ public class GeneralController {
         return persist.editUser(email,newUsername, password, newPassword);
     }
 
+    @RequestMapping (value = "start-league", method = {RequestMethod.GET, RequestMethod.POST})
+    public void startLeague() {
+        persist.startLeague();
+    }
+
+
+
 
 
 //    run only one time to initiate the league

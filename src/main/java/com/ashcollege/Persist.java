@@ -1,5 +1,6 @@
 package com.ashcollege;
 
+import com.ashcollege.entities.Matchup;
 import com.ashcollege.entities.Team;
 import com.ashcollege.entities.User;
 import com.ashcollege.responses.BasicResponse;
@@ -225,6 +226,77 @@ public class Persist {
         }
 
     }
+
+    private List<Team> getTeams() {
+        List<Team> teams = (List<Team>) this.sessionFactory.getCurrentSession().createQuery(
+                        "From Team")
+                .list();
+        return teams;
+    }
+
+    public void startLeague() {
+        List<Team> teams = getTeams();
+        int numTeams = teams.size();
+
+        int totalRounds = numTeams - 1;
+
+        for (int round = 1; round <= totalRounds; round++) {
+
+            List<Matchup> roundMatchups = new ArrayList<>();
+            System.out.println("Round " + round + " matchups:");
+
+
+            for (int i = 0; i < numTeams / 2; i++) {
+                int team1Index = i;
+                int team2Index = numTeams - 1 - i;
+
+                Team team1 = teams.get(team1Index);
+                Team team2 = teams.get(team2Index);
+
+                System.out.println(team1.getTeamName() + " vs " + team2.getTeamName());
+                Matchup matchup = new Matchup(round,team1,team2);
+                roundMatchups.add(matchup);
+            }
+
+            startRound(roundMatchups);
+
+            //Function that will wait for all threads to be done
+
+            rotateTeams(teams);
+        }
+    }
+
+    public void startRound(List<Matchup> games) {
+        for (Matchup game:games) {
+
+            new Thread(() -> {
+                int team1Chances = game.calculateTeam1Odds();
+                for (int i=0;i<GAME_LENGTH/TRY_GOAL;i++) {
+                    try {
+                        Thread.sleep(TRY_GOAL);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                    int goalHappens = (int)(Math.random()*100+1);
+                    int goal = (int) (Math.random() * 100) + 1;
+                    if (goalHappens>=50) {
+                        if (goal <= team1Chances) {
+                            game.addGoalTeam1();
+                        } else {
+                            game.addGoalTeam2();
+                        }
+                    }
+                }
+            }).start();
+        }
+    }
+
+    private void rotateTeams(List<Team> teams) {
+        // Move the last team to the second position
+        Team lastTeam = teams.remove(teams.size() - 1);
+        teams.add(1, lastTeam);
+    }
+
 
 
 //
