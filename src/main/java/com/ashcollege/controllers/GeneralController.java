@@ -51,10 +51,11 @@ public class GeneralController {
 
 
     // run only one time to initiate the league
-//    @RequestMapping(value = "insert-teams", method = {RequestMethod.GET, RequestMethod.POST})
-//    public void insertTeams() {
-//        persist.insertTeamsToTable();
-//    }
+   // @RequestMapping(value = "insert-teams", method = {RequestMethod.GET, RequestMethod.POST})
+    @PostConstruct
+    public void insertTeams() {
+        persist.insertTeamsToTable();
+    }
 
 //    @RequestMapping (value = "load-users", method = {RequestMethod.GET, RequestMethod.POST})
 //    public List<User> users() {

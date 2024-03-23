@@ -225,8 +225,24 @@ public class Persist {
             int defensiveRating = (int) (Math.random() * (MAXIMUM_DEFENSIVE_RATING - MINIMUM_DEFENSIVE_RATING + 1)) + MINIMUM_DEFENSIVE_RATING;
 
             Team team = new Team(name, 0, 0, offensiveRating, defensiveRating, 0);
-            save(team);
+            if (!teamsExists(name)) {
+                save(team);
+            }
         }
+    }
+
+    public boolean teamsExists(String teamName) {
+        boolean exists = false;
+        Team team;
+        team = (Team) this.sessionFactory.getCurrentSession().createQuery(
+                        "From Team WHERE teamName = :teamName")
+                .setParameter("teamName", teamName)
+                .setMaxResults(1)
+                .uniqueResult();
+        if (team != null) {
+            exists = true;
+        }
+        return exists;
     }
 
     private List<Team> getTeams() {
@@ -298,7 +314,6 @@ public class Persist {
         Team lastTeam = teams.remove(teams.size() - 1);
         teams.add(1, lastTeam);
     }
-
 
 //
 //   public BasicResponse innerUser (String username, String email, String password) {
