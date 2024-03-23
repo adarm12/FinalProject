@@ -252,7 +252,8 @@ public class Persist {
         return teams;
     }
 
-    public void startLeague() {
+    public List<List<Matchup>> startLeague() {
+        List<List<Matchup>> matchupsList = new ArrayList<>();
         List<Team> teams = getTeams();
         int numTeams = teams.size();
 
@@ -277,11 +278,13 @@ public class Persist {
             }
 
             startRound(roundMatchups);
+            matchupsList.add(roundMatchups);
 
             //Function that will wait for all threads to be done
 
             rotateTeams(teams);
         }
+        return matchupsList;
     }
 
     public void startRound(List<Matchup> games) {

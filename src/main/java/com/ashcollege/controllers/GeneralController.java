@@ -1,6 +1,7 @@
 package com.ashcollege.controllers;
 
 import com.ashcollege.Persist;
+import com.ashcollege.entities.Matchup;
 import com.ashcollege.entities.User;
 import com.ashcollege.responses.BasicResponse;
 import com.ashcollege.responses.LoginResponse;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.PostConstruct;
+import java.util.List;
 
 
 @RestController
@@ -45,8 +47,8 @@ public class GeneralController {
     }
 
     @RequestMapping(value = "start-league", method = {RequestMethod.GET, RequestMethod.POST})
-    public void startLeague() {
-        persist.startLeague();
+    public List<List<Matchup>> startLeague() {
+       return persist.startLeague();
     }
 
 
