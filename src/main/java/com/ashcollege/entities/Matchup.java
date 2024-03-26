@@ -32,6 +32,10 @@ public class Matchup {
         return team1Chances;
     }
 
+    public void printMatchup() {
+        System.out.println(team1.getTeamName()+" "+team1Goals+" : "+team2Goals+" "+team2.getTeamName());
+    }
+
     public int getRound() {
         return round;
     }

@@ -6,8 +6,10 @@ import com.ashcollege.entities.User;
 import com.ashcollege.responses.BasicResponse;
 import com.ashcollege.responses.LoginResponse;
 import com.github.javafaker.Faker;
+import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -216,17 +218,19 @@ public class Persist {
 
 
     public void insertTeamsToTable() {
+        List<Team> teams = getTeams();
+        if (teams.isEmpty()) {
+            List<String> teamsNames = List.of(new String[]{"maccabi tel aviv", "hapoel tel aviv", "hapoel holon", "maccabi haifa",
+                    "hapoel eilat", "galil elyon", "maccabi ramat gan", "hapoel beersheva"});
 
-        List<String> teamsNames = List.of(new String[]{"maccabi tel aviv", "hapoel tel aviv", "hapoel holon", "maccabi haifa",
-                "hapoel eilat", "galil elyon", "maccabi ramat gan", "hapoel beersheva"});
+            for (String name : teamsNames) {
+                int offensiveRating = (int) (Math.random() * (MAXIMUM_OFFENSIVE_RATING - MINIMUM_OFFENSIVE_RATING + 1)) + MINIMUM_OFFENSIVE_RATING;
+                int defensiveRating = (int) (Math.random() * (MAXIMUM_DEFENSIVE_RATING - MINIMUM_DEFENSIVE_RATING + 1)) + MINIMUM_DEFENSIVE_RATING;
 
-        for (String name : teamsNames) {
-            int offensiveRating = (int) (Math.random() * (MAXIMUM_OFFENSIVE_RATING - MINIMUM_OFFENSIVE_RATING + 1)) + MINIMUM_OFFENSIVE_RATING;
-            int defensiveRating = (int) (Math.random() * (MAXIMUM_DEFENSIVE_RATING - MINIMUM_DEFENSIVE_RATING + 1)) + MINIMUM_DEFENSIVE_RATING;
-
-            Team team = new Team(name, 0, 0, offensiveRating, defensiveRating, 0);
-            if (!teamsExists(name)) {
-                save(team);
+                Team team = new Team(name, 0, 0, offensiveRating, defensiveRating, 0);
+                if (!teamsExists(name)) {
+                    save(team);
+                }
             }
         }
     }
@@ -277,40 +281,105 @@ public class Persist {
                 roundMatchups.add(matchup);
             }
 
-            startRound(roundMatchups);
-            matchupsList.add(roundMatchups);
+            List <Thread> games = startRound(roundMatchups);
+            //Function that will wait for all threads to be done:
+            for (Thread gameThread: games) {
+                try {
+                    gameThread.join();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            System.out.println("-----------------");
+            System.out.println("round over");
+            System.out.println("-----------------");
 
-            //Function that will wait for all threads to be done
+
+            matchupsList.add(roundMatchups);
 
             rotateTeams(teams);
         }
         return matchupsList;
     }
 
-    public void startRound(List<Matchup> games) {
+    private Team winningTeam(Matchup matchup) {
+        Team winner = null;
+        if (matchup.getTeam1Goals()> matchup.getTeam2Goals()) {
+            winner = matchup.getTeam1();
+        }
+        else if (matchup.getTeam1Goals()< matchup.getTeam2Goals()) {
+            winner = matchup.getTeam2();
+        }
+        return winner;
+    }
+    private void updatePoints(Matchup matchup, int pointsTeam1, int pointsTeam2, Session session) {
+        Team winningTeam = winningTeam(matchup);
+        if (winningTeam==null) {
+            matchup.getTeam1().setPoints(pointsTeam1 + 1);
+            matchup.getTeam2().setPoints(pointsTeam2 + 1);
+        }
+        else if (winningTeam==matchup.getTeam1()) {
+            matchup.getTeam1().setPoints(pointsTeam1 + 3);
+            matchup.getTeam2().setPoints(pointsTeam2);
+        }
+        else {
+            matchup.getTeam1().setPoints(pointsTeam1);
+            matchup.getTeam2().setPoints(pointsTeam2 + 3);
+        }
+        session.update(matchup.getTeam1());
+        session.update(matchup.getTeam2());
+    }
+
+    public List<Thread> startRound(List<Matchup> games) {
+        List<Thread> threads = new ArrayList<>();
         for (Matchup game : games) {
 
-            new Thread(() -> {
-                int team1Chances = game.calculateTeam1Odds();
-                for (int i = 0; i < GAME_LENGTH / TRY_GOAL; i++) {
-                    try {
-                        Thread.sleep(TRY_GOAL);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                    int goalHappens = (int) (Math.random() * 100 + 1);
-                    int goal = (int) (Math.random() * 100) + 1;
-                    if (goalHappens >= 50) {
-                        if (goal <= team1Chances) {
-                            game.addGoalTeam1();
-                        } else {
-                            game.addGoalTeam2();
+            Thread thread = new Thread(() -> {
+                try(Session session = sessionFactory.openSession()) {
+                    Transaction transaction = session.beginTransaction();
+
+                    int team1Chances = game.calculateTeam1Odds();
+                    int pointsTeam1 = game.getTeam1().getPoints();
+                    int pointsTeam2 = game.getTeam2().getPoints();
+
+                    for (int i = 0; i < GAME_LENGTH / TRY_GOAL; i++) {
+                        try {
+                            Thread.sleep(TRY_GOAL);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                        int goalHappens = (int) (Math.random() * 100 + 1);
+                        int goal = (int) (Math.random() * 100) + 1;
+                        if (goalHappens >= 50) {
+                            if (goal <= team1Chances) {
+                                game.addGoalTeam1();
+                            } else {
+                                game.addGoalTeam2();
+                            }
+                            //points are updated mid-game
+                            updatePoints(game, pointsTeam1, pointsTeam2, session);
+
+                            game.printMatchup();
+
+                            // commit the transaction after each goal
+                            transaction.commit();
+                            // begin a new transaction
+                            transaction = session.beginTransaction();
                         }
                     }
+
+                    transaction.commit();
+                } catch (HibernateException e) {
+                    throw new RuntimeException(e);
                 }
-            }).start();
+            });
+            thread.start();
+            threads.add(thread);
+
         }
+        return threads;
     }
+
 
     private void rotateTeams(List<Team> teams) {
         // Move the last team to the second position
