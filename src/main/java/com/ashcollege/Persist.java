@@ -249,7 +249,7 @@ public class Persist {
         return exists;
     }
 
-    private List<Team> getTeams() {
+    public List<Team> getTeams() {
         List<Team> teams = (List<Team>) this.sessionFactory.getCurrentSession().createQuery(
                         "From Team")
                 .list();

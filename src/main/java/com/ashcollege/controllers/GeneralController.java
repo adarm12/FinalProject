@@ -2,6 +2,7 @@ package com.ashcollege.controllers;
 
 import com.ashcollege.Persist;
 import com.ashcollege.entities.Matchup;
+import com.ashcollege.entities.Team;
 import com.ashcollege.entities.User;
 import com.ashcollege.responses.BasicResponse;
 import com.ashcollege.responses.LoginResponse;
@@ -51,6 +52,10 @@ public class GeneralController {
        return persist.startLeague();
     }
 
+    @RequestMapping(value = "get-teams", method = {RequestMethod.GET, RequestMethod.POST})
+    public List<Team> teams() {
+        return persist.getTeams();
+    }
 
     // run only one time to initiate the league
    // @RequestMapping(value = "insert-teams", method = {RequestMethod.GET, RequestMethod.POST})
