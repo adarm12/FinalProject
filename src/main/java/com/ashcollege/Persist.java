@@ -1,5 +1,6 @@
 package com.ashcollege;
 
+import com.ashcollege.entities.EventMatchup;
 import com.ashcollege.entities.Matchup;
 import com.ashcollege.entities.Team;
 import com.ashcollege.entities.User;
@@ -10,12 +11,18 @@ import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import javax.annotation.PostConstruct;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -279,11 +286,13 @@ public class Persist {
                 System.out.println(team1.getTeamName() + " vs " + team2.getTeamName());
                 Matchup matchup = new Matchup(round, team1, team2);
                 roundMatchups.add(matchup);
+                stream(matchupsList,roundMatchups);
+
             }
 
-            List <Thread> games = startRound(roundMatchups);
+            List<Thread> games = startRound(roundMatchups);
             //Function that will wait for all threads to be done:
-            for (Thread gameThread: games) {
+            for (Thread gameThread : games) {
                 try {
                     gameThread.join();
                 } catch (InterruptedException e) {
@@ -296,7 +305,6 @@ public class Persist {
 
 
             matchupsList.add(roundMatchups);
-
             rotateTeams(teams);
         }
         return matchupsList;
@@ -304,25 +312,23 @@ public class Persist {
 
     private Team winningTeam(Matchup matchup) {
         Team winner = null;
-        if (matchup.getTeam1Goals()> matchup.getTeam2Goals()) {
+        if (matchup.getTeam1Goals() > matchup.getTeam2Goals()) {
             winner = matchup.getTeam1();
-        }
-        else if (matchup.getTeam1Goals()< matchup.getTeam2Goals()) {
+        } else if (matchup.getTeam1Goals() < matchup.getTeam2Goals()) {
             winner = matchup.getTeam2();
         }
         return winner;
     }
+
     private void updatePoints(Matchup matchup, int pointsTeam1, int pointsTeam2, Session session) {
         Team winningTeam = winningTeam(matchup);
-        if (winningTeam==null) {
+        if (winningTeam == null) {
             matchup.getTeam1().setPoints(pointsTeam1 + 1);
             matchup.getTeam2().setPoints(pointsTeam2 + 1);
-        }
-        else if (winningTeam==matchup.getTeam1()) {
+        } else if (winningTeam == matchup.getTeam1()) {
             matchup.getTeam1().setPoints(pointsTeam1 + 3);
             matchup.getTeam2().setPoints(pointsTeam2);
-        }
-        else {
+        } else {
             matchup.getTeam1().setPoints(pointsTeam1);
             matchup.getTeam2().setPoints(pointsTeam2 + 3);
         }
@@ -335,7 +341,7 @@ public class Persist {
         for (Matchup game : games) {
 
             Thread thread = new Thread(() -> {
-                try(Session session = sessionFactory.openSession()) {
+                try (Session session = sessionFactory.openSession()) {
                     Transaction transaction = session.beginTransaction();
 
                     int team1Chances = game.calculateTeam1Odds();
@@ -385,6 +391,41 @@ public class Persist {
         // Move the last team to the second position
         Team lastTeam = teams.remove(teams.size() - 1);
         teams.add(1, lastTeam);
+    }
+
+    private List<EventMatchup> matchups = new ArrayList<>();
+
+    public void stream(List<List<Matchup>> matchupsList, List<Matchup> currentMatchups) {
+        new Thread(() -> {
+            while (true) {
+                try {
+                    Thread.sleep(10000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                for (EventMatchup matchup : matchups) {
+                    try {
+                        JSONObject jsonObject = new JSONObject();
+                        jsonObject.put("list", matchupsList);
+                        jsonObject.put("current", currentMatchups);
+                        matchup.getSseEmitter().send(jsonObject.toString());
+
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+        }).start();
+    }
+
+    public SseEmitter createStreamingSession() {
+        try {
+            SseEmitter sseEmitter = new SseEmitter((long) (10 * 60 * 1000));
+            matchups.add(new EventMatchup(sseEmitter));
+            return sseEmitter;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
 //

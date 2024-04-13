@@ -1,6 +1,7 @@
 package com.ashcollege.controllers;
 
 import com.ashcollege.Persist;
+import com.ashcollege.entities.EventMatchup;
 import com.ashcollege.entities.Matchup;
 import com.ashcollege.entities.Team;
 import com.ashcollege.entities.User;
@@ -8,12 +9,17 @@ import com.ashcollege.responses.BasicResponse;
 import com.ashcollege.responses.LoginResponse;
 import com.ashcollege.utils.DbUtils;
 import com.mysql.cj.x.protobuf.MysqlxDatatypes;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import javax.annotation.PostConstruct;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -49,7 +55,7 @@ public class GeneralController {
 
     @RequestMapping(value = "start-league", method = {RequestMethod.GET, RequestMethod.POST})
     public List<List<Matchup>> startLeague() {
-       return persist.startLeague();
+        return persist.startLeague();
     }
 
     @RequestMapping(value = "get-teams", method = {RequestMethod.GET, RequestMethod.POST})
@@ -58,10 +64,15 @@ public class GeneralController {
     }
 
     // run only one time to initiate the league
-   // @RequestMapping(value = "insert-teams", method = {RequestMethod.GET, RequestMethod.POST})
+    // @RequestMapping(value = "insert-teams", method = {RequestMethod.GET, RequestMethod.POST})
     @PostConstruct
     public void insertTeams() {
         persist.insertTeamsToTable();
+    }
+
+    @RequestMapping(value = "/streaming", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter createStreamingSession() {
+        return persist.createStreamingSession();
     }
 
 //    @RequestMapping (value = "load-users", method = {RequestMethod.GET, RequestMethod.POST})
