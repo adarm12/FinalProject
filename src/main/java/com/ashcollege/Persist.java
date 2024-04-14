@@ -299,6 +299,14 @@ public class Persist {
                     throw new RuntimeException(e);
                 }
             }
+
+            System.out.println("111111111111111111");
+
+            for (Matchup matchup:roundMatchups) {
+                updateSkillsAndInjuries(matchup);
+            }
+
+
             System.out.println("-----------------");
             System.out.println("round over");
             System.out.println("-----------------");
@@ -310,6 +318,7 @@ public class Persist {
         return matchupsList;
     }
 
+    //function that checks who is the current winning team in the game
     private Team winningTeam(Matchup matchup) {
         Team winner = null;
         if (matchup.getTeam1Goals() > matchup.getTeam2Goals()) {
@@ -320,7 +329,8 @@ public class Persist {
         return winner;
     }
 
-    private void updatePoints(Matchup matchup, int pointsTeam1, int pointsTeam2, Session session) {
+    //function that updates the points in the league table
+    private void updatePoints(Matchup matchup, int pointsTeam1, int pointsTeam2,int differenceTeam1, int differenceTeam2, Session session) {
         Team winningTeam = winningTeam(matchup);
         if (winningTeam == null) {
             matchup.getTeam1().setPoints(pointsTeam1 + 1);
@@ -332,8 +342,43 @@ public class Persist {
             matchup.getTeam1().setPoints(pointsTeam1);
             matchup.getTeam2().setPoints(pointsTeam2 + 3);
         }
+
+        matchup.getTeam1().setGoalsDifference(differenceTeam1+matchup.getTeam1Goals()- matchup.getTeam2Goals());
+        matchup.getTeam2().setGoalsDifference(differenceTeam2+matchup.getTeam2Goals()- matchup.getTeam1Goals());
+
         session.update(matchup.getTeam1());
         session.update(matchup.getTeam2());
+    }
+
+    private void updateSkillsAndInjuries(Matchup matchup) {
+        Team winningTeam = winningTeam(matchup);
+        if (winningTeam!=null) {
+            Team losingTeam = (matchup.getTeam1() == winningTeam ? matchup.getTeam2() : matchup.getTeam1());
+            winningTeam.setOffensiveRating((int) (winningTeam.getOffensiveRating() + (100-winningTeam.getOffensiveRating())*WINNING_SKILL_BONUS));
+            winningTeam.setDefensiveRating((int) (winningTeam.getDefensiveRating() + (100-winningTeam.getDefensiveRating())* WINNING_SKILL_BONUS));
+
+            losingTeam.setOffensiveRating((int) (losingTeam.getOffensiveRating() * LOSING_SKILL_MINUS));
+            losingTeam.setDefensiveRating((int) (losingTeam.getDefensiveRating() * LOSING_SKILL_MINUS));
+            if (Math.abs(matchup.getTeam1Goals() - matchup.getTeam2Goals()) >= BLOWOUT) {
+                winningTeam.setOffensiveRating((int) (winningTeam.getOffensiveRating()+ (100-winningTeam.getOffensiveRating()) * WINNING_SKILL_BONUS));
+            }
+        }
+        int injuriesTeam1 = setInjuries();
+        int injuriesTeam2 = setInjuries();
+        matchup.getTeam1().setPlayerInjuries(injuriesTeam1);
+        matchup.getTeam2().setPlayerInjuries(injuriesTeam2);
+
+    }
+
+    private int setInjuries() {
+        int injuries = 0;
+        for (int i=0; i<PLAYERS_ON_TEAM; i++) {
+            int injuryRandomNum = (int)(Math.random()*100+1);
+            if (injuryRandomNum<INJURY_RISK) {
+                injuries++;
+            }
+        }
+        return injuries;
     }
 
     public List<Thread> startRound(List<Matchup> games) {
@@ -347,6 +392,9 @@ public class Persist {
                     int team1Chances = game.calculateTeam1Odds();
                     int pointsTeam1 = game.getTeam1().getPoints();
                     int pointsTeam2 = game.getTeam2().getPoints();
+
+                    int differenceTeam1 = game.getTeam1().getGoalsDifference();
+                    int differenceTeam2 = game.getTeam2().getGoalsDifference();
 
                     for (int i = 0; i < GAME_LENGTH / TRY_GOAL; i++) {
                         try {
@@ -363,7 +411,7 @@ public class Persist {
                                 game.addGoalTeam2();
                             }
                             //points are updated mid-game
-                            updatePoints(game, pointsTeam1, pointsTeam2, session);
+                            updatePoints(game, pointsTeam1, pointsTeam2, differenceTeam1, differenceTeam2, session);
 
                             game.printMatchup();
 
