@@ -54,8 +54,11 @@ public class GeneralController {
     }
 
     @RequestMapping(value = "start-league", method = {RequestMethod.GET, RequestMethod.POST})
-    public List<List<Matchup>> startLeague() {
-        return persist.startLeague();
+    public void startLeague() {
+        new Thread( () -> {
+            persist.startLeague();
+        }).start();
+
     }
 
     @RequestMapping(value = "get-teams", method = {RequestMethod.GET, RequestMethod.POST})

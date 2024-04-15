@@ -264,6 +264,8 @@ public class Persist {
     }
 
     public List<List<Matchup>> startLeague() {
+
+
         List<List<Matchup>> matchupsList = new ArrayList<>();
         List<Team> teams = getTeams();
         int numTeams = teams.size();
@@ -288,6 +290,12 @@ public class Persist {
                 roundMatchups.add(matchup);
                 stream(matchupsList,roundMatchups);
 
+            }
+
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
 
             List<Thread> games = startRound(roundMatchups);
@@ -390,6 +398,8 @@ public class Persist {
                     Transaction transaction = session.beginTransaction();
 
                     int team1Chances = game.calculateTeam1Odds();
+                    System.out.println("22222222222222 " + team1Chances);
+
                     int pointsTeam1 = game.getTeam1().getPoints();
                     int pointsTeam2 = game.getTeam2().getPoints();
 

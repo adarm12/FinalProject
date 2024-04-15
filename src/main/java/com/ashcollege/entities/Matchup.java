@@ -9,6 +9,10 @@ public class Matchup {
     private int team2Goals;
     private boolean rainingWeather; //raining weather is a little bit better for team1;
 
+    private double team1WinRatio;
+    private double team2WinRatio;
+    private double drawRatio;
+
     public Matchup(int round, Team team1, Team team2) {
         this.round = round;
         this.team1 = team1;
@@ -16,6 +20,7 @@ public class Matchup {
         this.team1Goals = 0;
         this.team2Goals = 0;
         this.rainingWeather = Math.random()>0.5;
+        calculateBettingRatios();
     }
 
     public int calculateTeam1Odds() {
@@ -30,6 +35,21 @@ public class Matchup {
         int team1Chances = (int) ((double)team1Skill/(double) (team1Skill+team2Skill)*100);
 
         return team1Chances;
+    }
+
+    public void calculateBettingRatios() {
+        double team1Odds = 100.0 / (double) calculateTeam1Odds();
+        double team2Odds = 100.0 / (double) (100 - calculateTeam1Odds());
+        double drawOdds = (team1Odds+team2Odds) / 2.0;
+
+        this.team1WinRatio = Double.parseDouble(String.format("%.1f", team1Odds));
+        this.team2WinRatio = Double.parseDouble(String.format("%.1f", team2Odds));
+        this.drawRatio = Double.parseDouble(String.format("%.1f", drawOdds));
+
+        System.out.println("team1 ratio: "+ team1WinRatio);
+        System.out.println("team2 ratio: "+ team2WinRatio);
+        System.out.println("draw ratio: "+ drawRatio);
+
     }
 
     public void printMatchup() {
@@ -91,5 +111,29 @@ public class Matchup {
     }
     public void addGoalTeam2() {
         this.team2Goals = team2Goals+1;
+    }
+
+    public double getTeam1WinRatio() {
+        return team1WinRatio;
+    }
+
+    public void setTeam1WinRatio(double team1WinRatio) {
+        this.team1WinRatio = team1WinRatio;
+    }
+
+    public double getTeam2WinRatio() {
+        return team2WinRatio;
+    }
+
+    public void setTeam2WinRatio(double team2WinRatio) {
+        this.team2WinRatio = team2WinRatio;
+    }
+
+    public double getDrawRatio() {
+        return drawRatio;
+    }
+
+    public void setDrawRatio(double drawRatio) {
+        this.drawRatio = drawRatio;
     }
 }
