@@ -12,16 +12,19 @@ public class User {
     private String password;
     private String secret;
 
+    private double balance;
 
-    public User(int id, String username, String email, String password) {
-        this(username, email, password);
+
+    public User(int id, String username, String email, String password, double balance) {
+        this(username, email, password, balance);
         this.id = id;
     }
 
-    public User(String username, String email, String password) {
+    public User(String username, String email, String password, double balance) {
         this.email = email;
         this.username = username;
         this.password = password;
+        this.balance = balance;
     }
 
     public User() {
@@ -76,5 +79,13 @@ public class User {
 
     public void setSecret(String secret) {
         this.secret = secret;
+    }
+
+    public double getBalance() {
+        return balance;
+    }
+
+    public void setBalance(double balance) {
+        this.balance = balance;
     }
 }

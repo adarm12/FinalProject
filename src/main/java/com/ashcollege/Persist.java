@@ -58,7 +58,7 @@ public class Persist {
         return this.getQuerySession().get(clazz, oid);
     }
 
-    public BasicResponse signup(String username, String email, String password, String repeatPassword) {
+    public BasicResponse signup(String username, String email, String password, String repeatPassword, double balance) {
         BasicResponse basicResponse = new BasicResponse(false, ERROR_MISSING_FIELDS);
         if (!username.isEmpty()) {
             if (usernameAvailable(username)) {
@@ -67,12 +67,14 @@ public class Persist {
                         if (!password.isEmpty()) {
                             if (password.equals(repeatPassword)) {
                                 if (validPassword(password).isSuccess()) {
-                                    User user = new User(username, email, password);
-                                    Faker faker = new Faker();
-                                    user.setSecret(faker.random().hex(5));
-                                    save(user);
-                                    basicResponse.setSuccess(true);
-                                    basicResponse.setErrorCode(NO_ERRORS);
+                                    if (balance > 50) {
+                                        User user = new User(username, email, password, balance);
+                                        Faker faker = new Faker();
+                                        user.setSecret(faker.random().hex(5));
+                                        save(user);
+                                        basicResponse.setSuccess(true);
+                                        basicResponse.setErrorCode(NO_ERRORS);
+                                    } else basicResponse.setErrorCode(ERROR_LOW_BALANCE);
                                 } else basicResponse = validPassword(password);
                             } else basicResponse.setErrorCode(ERROR_PASSWORD_NOT_MATCH);
                         } else basicResponse.setErrorCode(ERROR_NO_PASSWORD);
@@ -288,7 +290,7 @@ public class Persist {
                 System.out.println(team1.getTeamName() + " vs " + team2.getTeamName());
                 Matchup matchup = new Matchup(round, team1, team2);
                 roundMatchups.add(matchup);
-                stream(matchupsList,roundMatchups);
+                stream(matchupsList, roundMatchups);
 
             }
 
@@ -310,7 +312,7 @@ public class Persist {
 
             System.out.println("111111111111111111");
 
-            for (Matchup matchup:roundMatchups) {
+            for (Matchup matchup : roundMatchups) {
                 updateSkillsAndInjuries(matchup);
             }
 
@@ -338,7 +340,7 @@ public class Persist {
     }
 
     //function that updates the points in the league table
-    private void updatePoints(Matchup matchup, int pointsTeam1, int pointsTeam2,int differenceTeam1, int differenceTeam2, Session session) {
+    private void updatePoints(Matchup matchup, int pointsTeam1, int pointsTeam2, int differenceTeam1, int differenceTeam2, Session session) {
         Team winningTeam = winningTeam(matchup);
         if (winningTeam == null) {
             matchup.getTeam1().setPoints(pointsTeam1 + 1);
@@ -351,8 +353,8 @@ public class Persist {
             matchup.getTeam2().setPoints(pointsTeam2 + 3);
         }
 
-        matchup.getTeam1().setGoalsDifference(differenceTeam1+matchup.getTeam1Goals()- matchup.getTeam2Goals());
-        matchup.getTeam2().setGoalsDifference(differenceTeam2+matchup.getTeam2Goals()- matchup.getTeam1Goals());
+        matchup.getTeam1().setGoalsDifference(differenceTeam1 + matchup.getTeam1Goals() - matchup.getTeam2Goals());
+        matchup.getTeam2().setGoalsDifference(differenceTeam2 + matchup.getTeam2Goals() - matchup.getTeam1Goals());
 
         session.update(matchup.getTeam1());
         session.update(matchup.getTeam2());
@@ -360,15 +362,15 @@ public class Persist {
 
     private void updateSkillsAndInjuries(Matchup matchup) {
         Team winningTeam = winningTeam(matchup);
-        if (winningTeam!=null) {
+        if (winningTeam != null) {
             Team losingTeam = (matchup.getTeam1() == winningTeam ? matchup.getTeam2() : matchup.getTeam1());
-            winningTeam.setOffensiveRating((int) (winningTeam.getOffensiveRating() + (100-winningTeam.getOffensiveRating())*WINNING_SKILL_BONUS));
-            winningTeam.setDefensiveRating((int) (winningTeam.getDefensiveRating() + (100-winningTeam.getDefensiveRating())* WINNING_SKILL_BONUS));
+            winningTeam.setOffensiveRating((int) (winningTeam.getOffensiveRating() + (100 - winningTeam.getOffensiveRating()) * WINNING_SKILL_BONUS));
+            winningTeam.setDefensiveRating((int) (winningTeam.getDefensiveRating() + (100 - winningTeam.getDefensiveRating()) * WINNING_SKILL_BONUS));
 
             losingTeam.setOffensiveRating((int) (losingTeam.getOffensiveRating() * LOSING_SKILL_MINUS));
             losingTeam.setDefensiveRating((int) (losingTeam.getDefensiveRating() * LOSING_SKILL_MINUS));
             if (Math.abs(matchup.getTeam1Goals() - matchup.getTeam2Goals()) >= BLOWOUT) {
-                winningTeam.setOffensiveRating((int) (winningTeam.getOffensiveRating()+ (100-winningTeam.getOffensiveRating()) * WINNING_SKILL_BONUS));
+                winningTeam.setOffensiveRating((int) (winningTeam.getOffensiveRating() + (100 - winningTeam.getOffensiveRating()) * WINNING_SKILL_BONUS));
             }
         }
         int injuriesTeam1 = setInjuries();
@@ -380,9 +382,9 @@ public class Persist {
 
     private int setInjuries() {
         int injuries = 0;
-        for (int i=0; i<PLAYERS_ON_TEAM; i++) {
-            int injuryRandomNum = (int)(Math.random()*100+1);
-            if (injuryRandomNum<INJURY_RISK) {
+        for (int i = 0; i < PLAYERS_ON_TEAM; i++) {
+            int injuryRandomNum = (int) (Math.random() * 100 + 1);
+            if (injuryRandomNum < INJURY_RISK) {
                 injuries++;
             }
         }
@@ -457,20 +459,19 @@ public class Persist {
         new Thread(() -> {
             while (true) {
                 try {
-                    Thread.sleep(10000);
+                    Thread.sleep(5000);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
-                for (EventMatchup matchup : matchups) {
-                    try {
+                try {
+                    for (EventMatchup matchup : matchups) {
                         JSONObject jsonObject = new JSONObject();
                         jsonObject.put("list", matchupsList);
                         jsonObject.put("current", currentMatchups);
                         matchup.getSseEmitter().send(jsonObject.toString());
-
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
                     }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
             }
         }).start();

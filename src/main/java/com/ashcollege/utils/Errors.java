@@ -19,6 +19,8 @@ public class Errors {
     public static final int ERROR_NO_EMAIL = 7;
     public static final int ERROR_NO_SUCH_EMAIL = 13;
 
+    public static final int ERROR_LOW_BALANCE = 15;
+
     public static final int ERROR_LOGIN_WRONG_CREDS = 8;
     public static final int ERROR_SECRET_WAS_NOT_SENT = 9;
 }

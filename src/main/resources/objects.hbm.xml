@@ -4,16 +4,16 @@
 <hibernate-mapping>
 
 
-
     <class name="com.ashcollege.entities.User" table="users" lazy="false">
-            <id name="id" type="int" column="id">
-                <generator class="native"/>
-            </id>
-            <property name="username" type="string" column="username"/>
-            <property name="email" type="string" column="email"/>
-            <property name="password" type="string" column="password"/>
-            <property name="secret" type="string" column="secret"/>
-        </class>
+        <id name="id" type="int" column="id">
+            <generator class="native"/>
+        </id>
+        <property name="username" type="string" column="username"/>
+        <property name="email" type="string" column="email"/>
+        <property name="password" type="string" column="password"/>
+        <property name="secret" type="string" column="secret"/>
+        <property name="balance" type="double" column="balance"/>
+    </class>
 
 
     <class name="com.ashcollege.entities.Team" table="teams" lazy="false">
@@ -31,16 +31,16 @@
     </class>
 
     <!--    <class name="com.ashcollege.entities.Student" table="students" lazy="false">-->
-<!--        <id name="id" type="int" column="id">-->
-<!--            <generator class="native"/>-->
-<!--        </id>-->
-<!--        <property name="firstName" type="string" column="first_name"/>-->
-<!--        <property name="lastName" type="string" column="last_name"/>-->
-<!--        <property name="grade" type="int" column="grade"/>-->
-<!--        <property name="age" type="int" column="age"/>-->
-<!--        <property name="department" type="string" column="department"/>-->
+    <!--        <id name="id" type="int" column="id">-->
+    <!--            <generator class="native"/>-->
+    <!--        </id>-->
+    <!--        <property name="firstName" type="string" column="first_name"/>-->
+    <!--        <property name="lastName" type="string" column="last_name"/>-->
+    <!--        <property name="grade" type="int" column="grade"/>-->
+    <!--        <property name="age" type="int" column="age"/>-->
+    <!--        <property name="department" type="string" column="department"/>-->
 
-<!--    </class>-->
+    <!--    </class>-->
 
 
 </hibernate-mapping>
