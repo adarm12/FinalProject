@@ -265,18 +265,20 @@ public class Persist {
         return teams;
     }
 
+    private static List<List<Matchup>> matchupsList = new ArrayList<>();
+    private static List<Matchup> roundMatchups = new ArrayList<>();
     public List<List<Matchup>> startLeague() {
 
 
-        List<List<Matchup>> matchupsList = new ArrayList<>();
         List<Team> teams = getTeams();
         int numTeams = teams.size();
 
         int totalRounds = numTeams - 1;
 
+
         for (int round = 1; round <= totalRounds; round++) {
 
-            List<Matchup> roundMatchups = new ArrayList<>();
+            roundMatchups = new ArrayList<>();
             System.out.println("Round " + round + " matchups:");
 
 
@@ -290,13 +292,30 @@ public class Persist {
                 System.out.println(team1.getTeamName() + " vs " + team2.getTeamName());
                 Matchup matchup = new Matchup(round, team1, team2);
                 roundMatchups.add(matchup);
-                stream(matchupsList, roundMatchups);
 
+
+
+            }
+
+            try {
+                stream(matchupsList, roundMatchups);
+                System.out.println("streamed success");
+            } catch (Exception e) {
+                System.out.println("wasnt able to stream");
+                throw new RuntimeException(e);
             }
 
             try {
                 Thread.sleep(5000);
             } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
+            try {
+                stream(matchupsList, roundMatchups);
+                System.out.println("streamed success");
+            } catch (Exception e) {
+                System.out.println("wasnt able to stream");
                 throw new RuntimeException(e);
             }
 
@@ -323,6 +342,13 @@ public class Persist {
 
 
             matchupsList.add(roundMatchups);
+            try {
+                stream(matchupsList, roundMatchups);
+                System.out.println("streamed success");
+            } catch (Exception e) {
+                System.out.println("wasnt able to stream");
+                throw new RuntimeException(e);
+            }
             rotateTeams(teams);
         }
         return matchupsList;
@@ -426,7 +452,13 @@ public class Persist {
                             updatePoints(game, pointsTeam1, pointsTeam2, differenceTeam1, differenceTeam2, session);
 
                             game.printMatchup();
-
+                            try {
+                                stream(matchupsList, roundMatchups);
+                                System.out.println("streamed success");
+                            } catch (Exception e) {
+                                System.out.println("wasnt able to stream");
+                                throw new RuntimeException(e);
+                            }
                             // commit the transaction after each goal
                             transaction.commit();
                             // begin a new transaction
@@ -456,25 +488,17 @@ public class Persist {
     private List<EventMatchup> matchups = new ArrayList<>();
 
     public void stream(List<List<Matchup>> matchupsList, List<Matchup> currentMatchups) {
-        new Thread(() -> {
-            while (true) {
-                try {
-                    Thread.sleep(5000);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-                try {
-                    for (EventMatchup matchup : matchups) {
-                        JSONObject jsonObject = new JSONObject();
-                        jsonObject.put("list", matchupsList);
-                        jsonObject.put("current", currentMatchups);
-                        matchup.getSseEmitter().send(jsonObject.toString());
-                    }
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+        try {
+            for (EventMatchup matchup : matchups) {
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("list", matchupsList);
+                jsonObject.put("current", currentMatchups);
+                matchup.getSseEmitter().send(jsonObject.toString());
             }
-        }).start();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     public SseEmitter createStreamingSession() {
