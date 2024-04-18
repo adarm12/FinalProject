@@ -1,10 +1,7 @@
 package com.ashcollege.controllers;
 
 import com.ashcollege.Persist;
-import com.ashcollege.entities.EventMatchup;
-import com.ashcollege.entities.Matchup;
-import com.ashcollege.entities.Team;
-import com.ashcollege.entities.User;
+import com.ashcollege.entities.*;
 import com.ashcollege.responses.BasicResponse;
 import com.ashcollege.responses.LoginResponse;
 import com.ashcollege.utils.DbUtils;
@@ -53,13 +50,13 @@ public class GeneralController {
         return persist.editUser(email, newUsername, password, newPassword, repeatNewPassword);
     }
 
-    @RequestMapping(value = "start-league", method = {RequestMethod.GET, RequestMethod.POST})
-    public void startLeague() {
-        new Thread( () -> {
-            persist.startLeague();
-        }).start();
-
-    }
+//    @RequestMapping(value = "start-league", method = {RequestMethod.GET, RequestMethod.POST})
+//    public void startLeague() {
+//        new Thread( () -> {
+//            persist.startLeague();
+//        }).start();
+//
+//    }
 
     @RequestMapping(value = "get-teams", method = {RequestMethod.GET, RequestMethod.POST})
     public List<Team> teams() {
@@ -71,6 +68,9 @@ public class GeneralController {
     @PostConstruct
     public void insertTeams() {
         persist.insertTeamsToTable();
+        new Thread( () -> {
+            persist.startLeague();
+        }).start();
     }
 
     @RequestMapping(value = "/streaming", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -82,6 +82,13 @@ public class GeneralController {
 //    public List<User> users() {
 //        return persist.loadUsers();
 //    }
+
+    @RequestMapping(value = "place-bet", method = {RequestMethod.GET, RequestMethod.POST})
+    public void placeBet(String user, int betSum, int matchupId, int result) {
+        persist.addBet(user,betSum,matchupId,result);
+
+    }
+
 
 
 }

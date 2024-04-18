@@ -1,7 +1,7 @@
 package com.ashcollege.entities;
 
 public class Matchup {
-
+    private int id;
     private int round;
     private Team team1;
     private Team team2;
@@ -13,7 +13,8 @@ public class Matchup {
     private double team2WinRatio;
     private double drawRatio;
 
-    public Matchup(int round, Team team1, Team team2) {
+    public Matchup(int id,int round, Team team1, Team team2) {
+        this.id = id;
         this.round = round;
         this.team1 = team1;
         this.team2 = team2;
@@ -50,6 +51,14 @@ public class Matchup {
         System.out.println("team2 ratio: "+ team2WinRatio);
         System.out.println("draw ratio: "+ drawRatio);
 
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 
     public void printMatchup() {

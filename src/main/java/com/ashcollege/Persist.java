@@ -1,9 +1,6 @@
 package com.ashcollege;
 
-import com.ashcollege.entities.EventMatchup;
-import com.ashcollege.entities.Matchup;
-import com.ashcollege.entities.Team;
-import com.ashcollege.entities.User;
+import com.ashcollege.entities.*;
 import com.ashcollege.responses.BasicResponse;
 import com.ashcollege.responses.LoginResponse;
 import com.github.javafaker.Faker;
@@ -52,7 +49,9 @@ public class Persist {
 
     public void save(Object object) {
         this.sessionFactory.getCurrentSession().saveOrUpdate(object);
+
     }
+
 
     public <T> T loadObject(Class<T> clazz, int oid) {
         return this.getQuerySession().get(clazz, oid);
@@ -214,6 +213,13 @@ public class Persist {
         return user;
     }
 
+    private List<User> getAllUsers() {
+        List<User> users;
+        users = (List<User>)this.sessionFactory.getCurrentSession().createQuery(
+                        "From User");
+        return users;
+    }
+
     private User getUserByInfo(String email, String password) {
         User user;
         user = (User) this.sessionFactory.getCurrentSession().createQuery(
@@ -221,6 +227,15 @@ public class Persist {
                 .setParameter("email", email)
                 .setParameter("password", password)
                 .setMaxResults(1)
+                .uniqueResult();
+        return user;
+    }
+
+    private User getUserBySecret(String secret) {
+        User user;
+        user = (User) this.sessionFactory.getCurrentSession().createQuery(
+                        "From User WHERE secret = :secret")
+                .setParameter("secret", secret)
                 .uniqueResult();
         return user;
     }
@@ -267,9 +282,11 @@ public class Persist {
 
     private static List<List<Matchup>> matchupsList = new ArrayList<>();
     private static List<Matchup> roundMatchups = new ArrayList<>();
+    private List<Bet> bets = new ArrayList<>();
+    private boolean betFlag;
     public List<List<Matchup>> startLeague() {
 
-
+        int counter=1;
         List<Team> teams = getTeams();
         int numTeams = teams.size();
 
@@ -277,6 +294,7 @@ public class Persist {
 
 
         for (int round = 1; round <= totalRounds; round++) {
+            betFlag = true;
 
             roundMatchups = new ArrayList<>();
             System.out.println("Round " + round + " matchups:");
@@ -290,7 +308,8 @@ public class Persist {
                 Team team2 = teams.get(team2Index);
 
                 System.out.println(team1.getTeamName() + " vs " + team2.getTeamName());
-                Matchup matchup = new Matchup(round, team1, team2);
+                Matchup matchup = new Matchup(counter,round, team1, team2);
+                counter++;
                 roundMatchups.add(matchup);
 
 
@@ -320,6 +339,7 @@ public class Persist {
             }
 
             List<Thread> games = startRound(roundMatchups);
+            betFlag=false;
             //Function that will wait for all threads to be done:
             for (Thread gameThread : games) {
                 try {
@@ -328,6 +348,8 @@ public class Persist {
                     throw new RuntimeException(e);
                 }
             }
+
+            checkBets();
 
             System.out.println("111111111111111111");
 
@@ -352,6 +374,29 @@ public class Persist {
             rotateTeams(teams);
         }
         return matchupsList;
+    }
+
+    public void checkBets() {
+        for (Bet bet: bets) {
+            bet.checkBet();
+            save(bet.getUser());
+        }
+
+        bets = new ArrayList<>();
+    }
+
+    public void addBet(String user, int betSum, int matchupId, int result) {
+        User user1 = getUserBySecret(user);
+        Matchup currentMatchup = null;
+        for (Matchup matchup: roundMatchups) {
+            if (matchup.getId()==matchupId) {
+                currentMatchup = matchup;
+            }
+        }
+        if ((result==1 || result==0 || result ==2)&&currentMatchup!=null&&betFlag) {
+            Bet bet = new Bet(user1, betSum, currentMatchup, result);
+            bets.add(bet);
+        }
     }
 
     //function that checks who is the current winning team in the game
