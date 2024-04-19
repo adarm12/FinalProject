@@ -215,8 +215,8 @@ public class Persist {
 
     private List<User> getAllUsers() {
         List<User> users;
-        users = (List<User>)this.sessionFactory.getCurrentSession().createQuery(
-                        "From User");
+        users = (List<User>) this.sessionFactory.getCurrentSession().createQuery(
+                "From User");
         return users;
     }
 
@@ -284,9 +284,10 @@ public class Persist {
     private static List<Matchup> roundMatchups = new ArrayList<>();
     private List<Bet> bets = new ArrayList<>();
     private boolean betFlag;
+
     public List<List<Matchup>> startLeague() {
 
-        int counter=1;
+        int counter = 1;
         List<Team> teams = getTeams();
         int numTeams = teams.size();
 
@@ -308,10 +309,9 @@ public class Persist {
                 Team team2 = teams.get(team2Index);
 
                 System.out.println(team1.getTeamName() + " vs " + team2.getTeamName());
-                Matchup matchup = new Matchup(counter,round, team1, team2);
+                Matchup matchup = new Matchup(counter, round, team1, team2);
                 counter++;
                 roundMatchups.add(matchup);
-
 
 
             }
@@ -339,7 +339,7 @@ public class Persist {
             }
 
             List<Thread> games = startRound(roundMatchups);
-            betFlag=false;
+            betFlag = false;
             //Function that will wait for all threads to be done:
             for (Thread gameThread : games) {
                 try {
@@ -377,7 +377,7 @@ public class Persist {
     }
 
     public void checkBets() {
-        for (Bet bet: bets) {
+        for (Bet bet : bets) {
             bet.checkBet();
             save(bet.getUser());
         }
@@ -385,18 +385,30 @@ public class Persist {
         bets = new ArrayList<>();
     }
 
-    public void addBet(String user, int betSum, int matchupId, int result) {
+    public BasicResponse addBet(String user, int betSum, int matchupId, int result) {
+        BasicResponse basicResponse = new BasicResponse(false, ERROR_MISSING_FIELDS);
         User user1 = getUserBySecret(user);
+        if (betSum > 0) {
+            if (betSum < user1.getBalance()) {
+                if (result == 0 ||result == 1 || result == 2) {
+                    basicResponse.setSuccess(true);
+                    basicResponse.setErrorCode(NO_ERRORS);
+                } else basicResponse.setErrorCode(NO_RESULT);
+            } else basicResponse.setErrorCode(ERROR_HIGH_BET);
+        } else basicResponse.setErrorCode(ERROR_LOW_BET);
+
         Matchup currentMatchup = null;
-        for (Matchup matchup: roundMatchups) {
-            if (matchup.getId()==matchupId) {
+        for (
+                Matchup matchup : roundMatchups) {
+            if (matchup.getId() == matchupId) {
                 currentMatchup = matchup;
             }
         }
-        if ((result==1 || result==0 || result ==2)&&currentMatchup!=null&&betFlag) {
+        if ((result == 1 || result == 0 || result == 2) && currentMatchup != null && betFlag) {
             Bet bet = new Bet(user1, betSum, currentMatchup, result);
             bets.add(bet);
         }
+        return basicResponse;
     }
 
     //function that checks who is the current winning team in the game

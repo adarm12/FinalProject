@@ -68,7 +68,7 @@ public class GeneralController {
     @PostConstruct
     public void insertTeams() {
         persist.insertTeamsToTable();
-        new Thread( () -> {
+        new Thread(() -> {
             persist.startLeague();
         }).start();
     }
@@ -84,11 +84,9 @@ public class GeneralController {
 //    }
 
     @RequestMapping(value = "place-bet", method = {RequestMethod.GET, RequestMethod.POST})
-    public void placeBet(String user, int betSum, int matchupId, int result) {
-        persist.addBet(user,betSum,matchupId,result);
-
+    public BasicResponse placeBet(String user, int betSum, int matchupId, int result) {
+        return persist.addBet(user, betSum, matchupId, result);
     }
-
 
 
 }
