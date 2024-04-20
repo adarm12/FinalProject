@@ -388,15 +388,6 @@ public class Persist {
     public BasicResponse addBet(String user, int betSum, int matchupId, int result) {
         BasicResponse basicResponse = new BasicResponse(false, ERROR_MISSING_FIELDS);
         User user1 = getUserBySecret(user);
-        if (betSum > 0) {
-            if (betSum < user1.getBalance()) {
-                if (result == 0 ||result == 1 || result == 2) {
-                    basicResponse.setSuccess(true);
-                    basicResponse.setErrorCode(NO_ERRORS);
-                } else basicResponse.setErrorCode(NO_RESULT);
-            } else basicResponse.setErrorCode(ERROR_HIGH_BET);
-        } else basicResponse.setErrorCode(ERROR_LOW_BET);
-
         Matchup currentMatchup = null;
         for (
                 Matchup matchup : roundMatchups) {
@@ -404,10 +395,24 @@ public class Persist {
                 currentMatchup = matchup;
             }
         }
-        if ((result == 1 || result == 0 || result == 2) && currentMatchup != null && betFlag) {
-            Bet bet = new Bet(user1, betSum, currentMatchup, result);
-            bets.add(bet);
-        }
+        if (betSum > 0) {
+            if (betSum < user1.getBalance()) {
+                if (result == 0 || result == 1 || result == 2) {
+                    if (currentMatchup != null) {
+                        if (!betFlag) {
+                            basicResponse.setSuccess(true);
+                            basicResponse.setErrorCode(NO_ERRORS);
+                            Bet bet = new Bet(user1, betSum, currentMatchup, result);
+                            bets.add(bet);
+                        } else basicResponse.setErrorCode(ROUND_OVER);
+                    } else basicResponse.setErrorCode(NO_MATCHUP);
+                } else basicResponse.setErrorCode(NO_RESULT);
+            } else basicResponse.setErrorCode(ERROR_HIGH_BET);
+        } else basicResponse.setErrorCode(ERROR_LOW_BET);
+//        if ((result == 1 || result == 0 || result == 2) && currentMatchup != null && betFlag) {
+//            Bet bet = new Bet(user1, betSum, currentMatchup, result);
+//            bets.add(bet);
+//        }
         return basicResponse;
     }
 
