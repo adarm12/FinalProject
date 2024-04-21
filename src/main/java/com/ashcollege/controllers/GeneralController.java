@@ -93,6 +93,7 @@ public class GeneralController {
     private List<List<Matchup>> matchupsList = new ArrayList<>();
     private List<Matchup> roundMatchups = new ArrayList<>();
     private List<Bet> bets = new ArrayList<>();
+    private List<Bet> oldBets = new ArrayList<>();
     private boolean betFlag;
     public List<List<Matchup>> startLeague() {
         int counterMatchupId = 1;
@@ -127,7 +128,7 @@ public class GeneralController {
                 }
             }
 
-            persist.checkBets(bets);
+            persist.checkBets(bets,oldBets);
 
 
             for (Matchup matchup : roundMatchups) {
@@ -142,7 +143,7 @@ public class GeneralController {
 
             matchupsList.add(roundMatchups);
             try {
-                persist.stream(matchupsList, roundMatchups);
+                persist.stream(matchupsList, roundMatchups,oldBets);
                 System.out.println("streamed success");
             } catch (Exception e) {
                 System.out.println("wasnt able to stream");
@@ -213,7 +214,7 @@ public class GeneralController {
 
                             game.printMatchup();
                             try {
-                                persist.stream(matchupsList, roundMatchups);
+                                persist.stream(matchupsList, roundMatchups,oldBets);
                                 System.out.println("streamed success");
                             } catch (Exception e) {
                                 System.out.println("wasnt able to stream");
@@ -233,7 +234,7 @@ public class GeneralController {
 
     private void streamAndWaitBeforeGameStarts() {
         try {
-            persist.stream(matchupsList, roundMatchups);
+            persist.stream(matchupsList, roundMatchups,oldBets);
             System.out.println("streamed success");
         } catch (Exception e) {
             System.out.println("wasnt able to stream");

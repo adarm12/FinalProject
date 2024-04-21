@@ -282,7 +282,7 @@ public class Persist {
 
 
 
-    public void checkBets(List<Bet> bets) {
+    public void checkBets(List<Bet> bets, List<Bet> oldBets) {
         List<User> needSaveUsers = new ArrayList<>();
         for (Bet bet : bets) {
             bet.checkBet();
@@ -296,6 +296,7 @@ public class Persist {
             if (flag) {
                 needSaveUsers.add(bet.getUser());
             }
+            oldBets.add(bet);
         }
         for (User user: needSaveUsers) {
             save(user);
@@ -374,12 +375,13 @@ public class Persist {
 
     private List<EventMatchup> matchups = new ArrayList<>();
 
-    public void stream(List<List<Matchup>> matchupsList, List<Matchup> currentMatchups) {
+    public void stream(List<List<Matchup>> matchupsList, List<Matchup> currentMatchups, List<Bet> oldBets) {
         try {
             for (EventMatchup matchup : matchups) {
                 JSONObject jsonObject = new JSONObject();
                 jsonObject.put("list", matchupsList);
                 jsonObject.put("current", currentMatchups);
+                jsonObject.put("bets", oldBets);
                 matchup.getSseEmitter().send(jsonObject.toString());
             }
         } catch (IOException e) {

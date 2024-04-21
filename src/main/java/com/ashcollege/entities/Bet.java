@@ -8,6 +8,7 @@ public class Bet {
     private int amount;
     private Matchup matchup;
     private int result;
+    private boolean succeed;
 
     public Bet(int id, User user, int amount, Matchup matchup, int result) {
         this.id = id;
@@ -22,6 +23,7 @@ public class Bet {
         this.amount = amount;
         this.matchup = matchup;
         this.result = result;
+        this.succeed = false;
     }
 
     public int getId() {
@@ -72,14 +74,17 @@ public class Bet {
         if (this.result == 0) {
             if (this.matchup.getTeam1Goals() == this.matchup.getTeam2Goals()) {
                 balanceToAdd += amount*matchup.getDrawRatio();
+                succeed=true;
             }
         } else if (this.result == 1) {
             if (this.matchup.getTeam1Goals() > this.matchup.getTeam2Goals()) {
                 balanceToAdd += amount*matchup.getTeam1WinRatio();
+                succeed = true;
             }
         } else if (this.result == 2) {
             if (this.matchup.getTeam1Goals() < this.matchup.getTeam2Goals()) {
                 balanceToAdd += amount*matchup.getTeam2WinRatio();
+                succeed = true;
             }
         }
         this.user.setBalance(this.user.getBalance() + balanceToAdd);
