@@ -231,7 +231,7 @@ public class Persist {
         return user;
     }
 
-    private User getUserBySecret(String secret) {
+    public User getUserBySecret(String secret) {
         User user;
         user = (User) this.sessionFactory.getCurrentSession().createQuery(
                         "From User WHERE secret = :secret")
@@ -280,141 +280,30 @@ public class Persist {
         return teams;
     }
 
-    private static List<List<Matchup>> matchupsList = new ArrayList<>();
-    private static List<Matchup> roundMatchups = new ArrayList<>();
-    private List<Bet> bets = new ArrayList<>();
-    private boolean betFlag;
-
-    public List<List<Matchup>> startLeague() {
-
-        int counter = 1;
-        List<Team> teams = getTeams();
-        int numTeams = teams.size();
-
-        int totalRounds = numTeams - 1;
 
 
-        for (int round = 1; round <= totalRounds; round++) {
-            betFlag = true;
-
-            roundMatchups = new ArrayList<>();
-            System.out.println("Round " + round + " matchups:");
-
-
-            for (int i = 0; i < numTeams / 2; i++) {
-                int team1Index = i;
-                int team2Index = numTeams - 1 - i;
-
-                Team team1 = teams.get(team1Index);
-                Team team2 = teams.get(team2Index);
-
-                System.out.println(team1.getTeamName() + " vs " + team2.getTeamName());
-                Matchup matchup = new Matchup(counter, round, team1, team2);
-                counter++;
-                roundMatchups.add(matchup);
-
-
-            }
-
-            try {
-                stream(matchupsList, roundMatchups);
-                System.out.println("streamed success");
-            } catch (Exception e) {
-                System.out.println("wasnt able to stream");
-                throw new RuntimeException(e);
-            }
-
-            try {
-                Thread.sleep(15000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-
-            try {
-                stream(matchupsList, roundMatchups);
-                System.out.println("streamed success");
-            } catch (Exception e) {
-                System.out.println("wasnt able to stream");
-                throw new RuntimeException(e);
-            }
-
-            List<Thread> games = startRound(roundMatchups);
-            betFlag = false;
-            //Function that will wait for all threads to be done:
-            for (Thread gameThread : games) {
-                try {
-                    gameThread.join();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-
-            checkBets();
-
-            System.out.println("111111111111111111");
-
-            for (Matchup matchup : roundMatchups) {
-                updateSkillsAndInjuries(matchup);
-            }
-
-
-            System.out.println("-----------------");
-            System.out.println("round over");
-            System.out.println("-----------------");
-
-
-            matchupsList.add(roundMatchups);
-            try {
-                stream(matchupsList, roundMatchups);
-                System.out.println("streamed success");
-            } catch (Exception e) {
-                System.out.println("wasnt able to stream");
-                throw new RuntimeException(e);
-            }
-            rotateTeams(teams);
-        }
-        return matchupsList;
-    }
-
-    public void checkBets() {
+    public void checkBets(List<Bet> bets) {
+        List<User> needSaveUsers = new ArrayList<>();
         for (Bet bet : bets) {
             bet.checkBet();
-            save(bet.getUser());
+            boolean flag = true;
+            for (User user: needSaveUsers) {
+                if (user.getId()==bet.getUser().getId()) {
+                    flag = false;
+                    break;
+                }
+            }
+            if (flag) {
+                needSaveUsers.add(bet.getUser());
+            }
+        }
+        for (User user: needSaveUsers) {
+            save(user);
         }
 
         bets = new ArrayList<>();
     }
 
-    public BasicResponse addBet(String user, int betSum, int matchupId, int result) {
-        BasicResponse basicResponse = new BasicResponse(false, ERROR_MISSING_FIELDS);
-        User user1 = getUserBySecret(user);
-        Matchup currentMatchup = null;
-        for (
-                Matchup matchup : roundMatchups) {
-            if (matchup.getId() == matchupId) {
-                currentMatchup = matchup;
-            }
-        }
-        if (betSum > 0) {
-            if (betSum < user1.getBalance()) {
-                if (result == 0 || result == 1 || result == 2) {
-                    if (currentMatchup != null) {
-                        if (betFlag) {
-                            basicResponse.setSuccess(true);
-                            basicResponse.setErrorCode(NO_ERRORS);
-                            Bet bet = new Bet(user1, betSum, currentMatchup, result);
-                            bets.add(bet);
-                        } else basicResponse.setErrorCode(ROUND_START);
-                    } else basicResponse.setErrorCode(NO_MATCHUP);
-                } else basicResponse.setErrorCode(NO_RESULT);
-            } else basicResponse.setErrorCode(ERROR_HIGH_BET);
-        } else basicResponse.setErrorCode(ERROR_LOW_BET);
-//        if ((result == 1 || result == 0 || result == 2) && currentMatchup != null && betFlag) {
-//            Bet bet = new Bet(user1, betSum, currentMatchup, result);
-//            bets.add(bet);
-//        }
-        return basicResponse;
-    }
 
     //function that checks who is the current winning team in the game
     private Team winningTeam(Matchup matchup) {
@@ -428,7 +317,7 @@ public class Persist {
     }
 
     //function that updates the points in the league table
-    private void updatePoints(Matchup matchup, int pointsTeam1, int pointsTeam2, int differenceTeam1, int differenceTeam2, Session session) {
+    public void updatePoints(Matchup matchup, int pointsTeam1, int pointsTeam2, int differenceTeam1, int differenceTeam2) {
         Team winningTeam = winningTeam(matchup);
         if (winningTeam == null) {
             matchup.getTeam1().setPoints(pointsTeam1 + 1);
@@ -444,11 +333,11 @@ public class Persist {
         matchup.getTeam1().setGoalsDifference(differenceTeam1 + matchup.getTeam1Goals() - matchup.getTeam2Goals());
         matchup.getTeam2().setGoalsDifference(differenceTeam2 + matchup.getTeam2Goals() - matchup.getTeam1Goals());
 
-        session.update(matchup.getTeam1());
-        session.update(matchup.getTeam2());
+        save(matchup.getTeam1());
+        save(matchup.getTeam2());
     }
 
-    private void updateSkillsAndInjuries(Matchup matchup) {
+    public void updateSkillsAndInjuries(Matchup matchup) {
         Team winningTeam = winningTeam(matchup);
         if (winningTeam != null) {
             Team losingTeam = (matchup.getTeam1() == winningTeam ? matchup.getTeam2() : matchup.getTeam1());
@@ -466,6 +355,9 @@ public class Persist {
         matchup.getTeam1().setPlayerInjuries(injuriesTeam1);
         matchup.getTeam2().setPlayerInjuries(injuriesTeam2);
 
+        save(matchup.getTeam1());
+        save(matchup.getTeam2());
+
     }
 
     private int setInjuries() {
@@ -479,73 +371,6 @@ public class Persist {
         return injuries;
     }
 
-    public List<Thread> startRound(List<Matchup> games) {
-        List<Thread> threads = new ArrayList<>();
-        for (Matchup game : games) {
-
-            Thread thread = new Thread(() -> {
-                try (Session session = sessionFactory.openSession()) {
-                    Transaction transaction = session.beginTransaction();
-
-                    int team1Chances = game.calculateTeam1Odds();
-                    System.out.println("22222222222222 " + team1Chances);
-
-                    int pointsTeam1 = game.getTeam1().getPoints();
-                    int pointsTeam2 = game.getTeam2().getPoints();
-
-                    int differenceTeam1 = game.getTeam1().getGoalsDifference();
-                    int differenceTeam2 = game.getTeam2().getGoalsDifference();
-
-                    for (int i = 0; i < GAME_LENGTH / TRY_GOAL; i++) {
-                        try {
-                            Thread.sleep(TRY_GOAL);
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
-                        }
-                        int goalHappens = (int) (Math.random() * 100 + 1);
-                        int goal = (int) (Math.random() * 100) + 1;
-                        if (goalHappens >= 50) {
-                            if (goal <= team1Chances) {
-                                game.addGoalTeam1();
-                            } else {
-                                game.addGoalTeam2();
-                            }
-                            //points are updated mid-game
-                            updatePoints(game, pointsTeam1, pointsTeam2, differenceTeam1, differenceTeam2, session);
-
-                            game.printMatchup();
-                            try {
-                                stream(matchupsList, roundMatchups);
-                                System.out.println("streamed success");
-                            } catch (Exception e) {
-                                System.out.println("wasnt able to stream");
-                                throw new RuntimeException(e);
-                            }
-                            // commit the transaction after each goal
-                            transaction.commit();
-                            // begin a new transaction
-                            transaction = session.beginTransaction();
-                        }
-                    }
-
-                    transaction.commit();
-                } catch (HibernateException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-            thread.start();
-            threads.add(thread);
-
-        }
-        return threads;
-    }
-
-
-    private void rotateTeams(List<Team> teams) {
-        // Move the last team to the second position
-        Team lastTeam = teams.remove(teams.size() - 1);
-        teams.add(1, lastTeam);
-    }
 
     private List<EventMatchup> matchups = new ArrayList<>();
 

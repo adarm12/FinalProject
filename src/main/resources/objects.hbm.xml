@@ -30,6 +30,8 @@
 
     </class>
 
+
+
     <!--    <class name="com.ashcollege.entities.Student" table="students" lazy="false">-->
     <!--        <id name="id" type="int" column="id">-->
     <!--            <generator class="native"/>-->
