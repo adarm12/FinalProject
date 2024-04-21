@@ -325,7 +325,7 @@ public class Persist {
             }
 
             try {
-                Thread.sleep(5000);
+                Thread.sleep(15000);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -399,12 +399,12 @@ public class Persist {
             if (betSum < user1.getBalance()) {
                 if (result == 0 || result == 1 || result == 2) {
                     if (currentMatchup != null) {
-                        if (!betFlag) {
+                        if (betFlag) {
                             basicResponse.setSuccess(true);
                             basicResponse.setErrorCode(NO_ERRORS);
                             Bet bet = new Bet(user1, betSum, currentMatchup, result);
                             bets.add(bet);
-                        } else basicResponse.setErrorCode(ROUND_OVER);
+                        } else basicResponse.setErrorCode(ROUND_START);
                     } else basicResponse.setErrorCode(NO_MATCHUP);
                 } else basicResponse.setErrorCode(NO_RESULT);
             } else basicResponse.setErrorCode(ERROR_HIGH_BET);

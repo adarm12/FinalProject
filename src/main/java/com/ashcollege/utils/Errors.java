@@ -20,7 +20,7 @@ public class Errors {
     public static final int ERROR_HIGH_BET = 17;
     public static final int NO_RESULT = 18;
     public static final int NO_MATCHUP = 19;
-    public static final int ROUND_OVER = 20;
+    public static final int ROUND_START = 20;
     public static final int ERROR_LOGIN_WRONG_CREDS = 8;
     public static final int ERROR_SECRET_WAS_NOT_SENT = 9;
 }
