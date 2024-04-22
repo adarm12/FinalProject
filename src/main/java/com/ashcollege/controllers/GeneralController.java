@@ -51,13 +51,6 @@ public class GeneralController {
         return persist.editUser(email, newUsername, password, newPassword, repeatNewPassword);
     }
 
-//    @RequestMapping(value = "start-league", method = {RequestMethod.GET, RequestMethod.POST})
-//    public void startLeague() {
-//        new Thread( () -> {
-//            persist.startLeague();
-//        }).start();
-//
-//    }
 
     @RequestMapping(value = "get-teams", method = {RequestMethod.GET, RequestMethod.POST})
     public List<Team> teams() {
@@ -129,7 +122,7 @@ public class GeneralController {
             }
 
             persist.checkBets(bets,oldBets);
-
+            bets.clear();
 
             for (Matchup matchup : roundMatchups) {
                 persist.updateSkillsAndInjuries(matchup);
