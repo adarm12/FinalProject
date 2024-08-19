@@ -220,6 +220,7 @@ public class Persist {
         return users;
     }
 
+
     private User getUserByInfo(String email, String password) {
         User user;
         user = (User) this.sessionFactory.getCurrentSession().createQuery(
